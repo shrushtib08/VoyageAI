@@ -200,14 +200,35 @@ Frontend will be running at `http://localhost:5173`.
 
 ## 🧪 Testing
 
-VoyageAI comes with comprehensive tests covering password hashing, user registration/login, travel manager criteria extraction, budget calculations, critic schedule audits, and end-to-end multi-agent orchestration:
+VoyageAI tests cover password hashing, user registration/login, travel manager criteria extraction, budget calculations, critic schedule audits, end-to-end orchestration, and RAG retrieval/context behavior:
 
 ```powershell
 $env:PYTHONPATH = "backend"
-.\venv\Scripts\pytest backend/tests/test_backend.py -v
+.\venv\Scripts\pytest backend/tests -v
 ```
 
-All 6 test suites pass with **zero errors**.
+### RAG setup
+
+Start the complete PostgreSQL + pgvector + backend + frontend stack with Docker Compose:
+
+```powershell
+Copy-Item .env.example .env
+# Set a unique POSTGRES_PASSWORD and a random SECRET_KEY (at least 32 characters).
+# Then configure real API keys and RAG_ADMIN_USERNAMES in .env.
+docker compose up --build
+```
+
+Open `http://localhost:8080`. PostgreSQL runs using the pgvector image and the API initializes the RAG schema at startup. Do not commit `.env`; keep `POSTGRES_PASSWORD` URL-safe (letters/numbers) for the Compose database URL.
+
+For a local backend run outside Docker, RAG storage requires PostgreSQL with the **pgvector server extension** installed; SQLite remains available for the rest of local development but does not persist or search vectors. Point `DATABASE_URL` at PostgreSQL and make sure the database role can enable the extension (or have an administrator enable it):
+
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+Configure an OpenAI-compatible embeddings endpoint using `EMBEDDING_API_KEY`, `EMBEDDING_API_BASE_URL`, `EMBEDDING_MODEL`, and `EMBEDDING_DIMENSIONS`. Ingestion and semantic retrieval fail explicitly if embeddings or pgvector are unavailable; VoyageAI does not create synthetic embeddings. Set `RAG_ADMIN_USERNAMES` to a comma-separated list of existing VoyageAI usernames permitted to manage documents.
+
+Authenticated RAG search is available at `POST /api/rag/search`. Administrators can list, ingest, and delete knowledge documents at `/api/rag/admin/documents` using multipart upload fields for title/source and optional URL, destination, country, category, document type, publication date, and update date. Supported files are PDF, TXT, Markdown, and HTML (PDFs must contain extractable text; OCR is not performed). Duplicate content and URLs are skipped. Answers expose `RAG KNOWLEDGE` or `WEB RESEARCH` source labels and citations; a failed retrieval with no web results produces an explicit abstention. Rapidly changing flight, hotel, weather, and alert data must continue to use live providers rather than the knowledge base.
 
 ---
 

@@ -119,10 +119,41 @@ export const FollowUpChat: React.FC<FollowUpChatProps> = ({ tripId, destination 
               >
                 <p className="whitespace-pre-line">{msg.content}</p>
 
-                {msg.actions_taken && Object.keys(msg.actions_taken).length > 0 && (
+                {msg.actions_taken && Object.keys(msg.actions_taken).some((key) => !["sources", "source_types", "grounded"].includes(key)) && (
                   <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-700/60 text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
                     <CheckCircle className="w-3.5 h-3.5" />
-                    <span>Applied to Trip: {Object.values(msg.actions_taken).join(", ")}</span>
+                    <span>
+                      Applied to Trip: {Object.entries(msg.actions_taken)
+                        .filter(([key]) => !["sources", "source_types", "grounded"].includes(key))
+                        .map(([, value]) => String(value))
+                        .join(", ")}
+                    </span>
+                  </div>
+                )}
+                {!!msg.sources?.length && (
+                  <div className="mt-3 pt-2 border-t border-slate-200 dark:border-slate-700/60">
+                    <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                      Sources · {[...new Set(msg.sources.map((source) => source.source_type))].join(" · ")}
+                    </p>
+                    <ul className="space-y-1">
+                      {msg.sources.map((source, index) => (
+                        <li key={`${source.chunk_id ?? source.url ?? source.title}-${index}`}>
+                          {source.url ? (
+                            <a
+                              href={source.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[11px] text-voyage-700 dark:text-voyage-300 underline underline-offset-2"
+                            >
+                              {source.title}
+                            </a>
+                          ) : (
+                            <span className="text-[11px] text-slate-600 dark:text-slate-300">{source.title}</span>
+                          )}
+                          {source.source && <span className="ml-1 text-[10px] text-slate-500">({source.source})</span>}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
               </div>

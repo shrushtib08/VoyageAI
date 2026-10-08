@@ -29,6 +29,15 @@ class Settings(BaseSettings):
     AVIATIONSTACK_API_KEY: str = ""
     OPENWEATHER_API_KEY: str = ""
 
+    # RAG
+    EMBEDDING_API_KEY: str = ""
+    EMBEDDING_API_BASE_URL: str = "https://api.openai.com/v1/embeddings"
+    EMBEDDING_MODEL: str = "text-embedding-3-small"
+    EMBEDDING_DIMENSIONS: int = 1536
+    RAG_CHUNK_SIZE: int = 800
+    RAG_CHUNK_OVERLAP: int = 120
+    RAG_ADMIN_USERNAMES: str = ""
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -38,6 +47,10 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> List[str]:
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
+
+    @property
+    def rag_admin_usernames(self) -> List[str]:
+        return [name.strip().casefold() for name in self.RAG_ADMIN_USERNAMES.split(",") if name.strip()]
 
 
 settings = Settings()

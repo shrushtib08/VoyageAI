@@ -14,8 +14,8 @@ Interactive Swagger Docs: `http://localhost:8000/docs`
   ```json
   {
     "email": "traveler@voyageai.com",
-    "username": "traveler1",
-    "password": "mypassword123",
+    "username": "alex-traveler",
+    "password": "choose-a-unique-strong-password",
     "full_name": "Alex Traveler"
   }
   ```
@@ -27,7 +27,7 @@ Interactive Swagger Docs: `http://localhost:8000/docs`
     "user": {
       "id": 1,
       "email": "traveler@voyageai.com",
-      "username": "traveler1",
+      "username": "alex-traveler",
       "full_name": "Alex Traveler",
       "created_at": "2026-10-07T16:00:00Z"
     }
@@ -39,8 +39,8 @@ Interactive Swagger Docs: `http://localhost:8000/docs`
 - **Request Body**:
   ```json
   {
-    "username_or_email": "traveler1",
-    "password": "mypassword123"
+    "username_or_email": "alex-traveler",
+    "password": "the-password-chosen-during-registration"
   }
   ```
 - **Response** (200 OK): JWT token and user profile.

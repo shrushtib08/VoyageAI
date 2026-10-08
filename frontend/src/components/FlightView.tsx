@@ -24,11 +24,11 @@ export const FlightView: React.FC<FlightViewProps> = ({ flight, currency }) => {
               >
                 {flight.is_live_data ? (
                   <>
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Live AviationStack Feed
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> LIVE API DATA
                   </>
                 ) : (
                   <>
-                    <ShieldCheck className="w-3.5 h-3.5 text-voyage-500" /> Researched Route Estimate
+                    <ShieldCheck className="w-3.5 h-3.5 text-voyage-500" /> ESTIMATED INFORMATION
                   </>
                 )}
               </span>

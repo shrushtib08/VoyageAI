@@ -39,8 +39,9 @@ class HotelAgent(BaseAgent):
             {
                 "agent_name": self.name,
                 "title": f"Regional Hospitality & Hotel Directory - {destination}",
+                "source_type": "ESTIMATED INFORMATION",
                 "url": f"https://www.booking.com/searchresults.html?ss={destination}",
-                "snippet": f"Market rate and amenity overview for accommodations in {destination}."
+                "snippet": f"Estimated accommodation market and amenity information for {destination}; live prices and availability are not verified."
             }
         ]
 

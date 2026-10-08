@@ -4,6 +4,7 @@ import logging
 from typing import Dict, Any, List
 from app.agents.base import BaseAgent
 from app.services.llm import llm_service
+from app.rag.rag_service import rag_service
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,12 @@ class TravelManagerAgent(BaseAgent):
         dest = extracted.get("destination", "Tokyo")
         multi_cities = self.detect_multi_cities(dest)
         extracted["multi_cities"] = multi_cities
+        knowledge = await rag_service.agent_knowledge(
+            query=f"Essential travel guide, transportation, customs, and safety information for {dest}",
+            destination=dest,
+        )
+        extracted["rag_knowledge"] = knowledge["context"]
+        extracted["rag_sources"] = knowledge["sources"]
 
         return extracted
 

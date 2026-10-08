@@ -45,7 +45,7 @@ export const ProgressPage: React.FC<ProgressPageProps> = ({
     let pollInterval: any;
 
     // Connect SSE Stream with fallback polling
-    const streamUrl = `http://localhost:8000/api/trips/${tripId}/stream`;
+    const streamUrl = `/api/trips/${tripId}/stream`;
     let eventSource: EventSource | null = null;
 
     try {

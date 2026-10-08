@@ -2,6 +2,7 @@ import logging
 from typing import Dict, Any, List
 from app.agents.base import BaseAgent
 from app.services.llm import llm_service
+from app.rag.rag_service import rag_service
 
 logger = logging.getLogger(__name__)
 
@@ -20,17 +21,16 @@ class FoodAgent(BaseAgent):
         currency = context.get("currency", "INR")
         dietary = context.get("dietary_preferences", [])
         interests = context.get("interests", [])
+        knowledge = await rag_service.agent_knowledge(
+            query=f"Local cuisine, food customs and dietary guidance for {destination}; preferences: {', '.join(dietary)}",
+            destination=destination,
+        )
 
-        food_intel = await self.research_gastronomy(destination, dietary, currency, budget)
+        food_intel = await self.research_gastronomy(
+            destination, dietary, currency, budget, knowledge["context"]
+        )
 
-        sources = [
-            {
-                "agent_name": self.name,
-                "title": f"Culinary Atlas & Dining Registry - {destination}",
-                "url": f"https://www.tasteatlas.com/search?q={destination.replace(' ', '+')}",
-                "snippet": f"Authentic regional gastronomic heritage and traditional culinary specialties in {destination}."
-            }
-        ]
+        sources = [{"agent_name": self.name, **source} for source in knowledge["sources"]]
 
         return {
             "local_dishes": food_intel.get("local_dishes", []),
@@ -39,6 +39,7 @@ class FoodAgent(BaseAgent):
             "street_food": food_intel.get("street_food", []),
             "dietary_suitability": food_intel.get("dietary_suitability", {}),
             "price_level_summary": food_intel.get("price_level_summary", "Moderate"),
+            "source_types": sorted({source["source_type"] for source in sources}) or ["ESTIMATED INFORMATION"],
             "source_citations": sources,
         }
 
@@ -47,7 +48,8 @@ class FoodAgent(BaseAgent):
         destination: str,
         dietary: List[str],
         currency: str,
-        budget: Any
+        budget: Any,
+        rag_context: str = "",
     ) -> Dict[str, Any]:
         """Queries LLM for authentic culinary recommendations."""
         if llm_service.is_available():
@@ -61,6 +63,7 @@ class FoodAgent(BaseAgent):
                 f"Destination: {destination}\n"
                 f"Dietary Preferences: {dietary_str}\n"
                 f"Budget Currency: {currency}\n"
+                f"RAG KNOWLEDGE (stable food and customs reference):\n{rag_context}\n"
                 "Return JSON with:\n"
                 "- local_dishes: list of {name, description, typical_ingredients, must_try_reason}\n"
                 "- popular_food_areas: list of strings (famous food streets, alleys, market halls)\n"

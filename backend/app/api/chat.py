@@ -11,7 +11,7 @@ from app.models.itinerary import Itinerary, ItineraryDay
 from app.models.budget import Budget
 from app.schemas.chat import ChatMessageRequest, ChatMessageResponse, ConversationResponse
 from app.api.deps import get_current_user
-from app.services.llm import llm_service
+from app.rag.rag_service import rag_service
 
 logger = logging.getLogger(__name__)
 
@@ -98,57 +98,26 @@ async def post_followup_message(
     history_msgs.reverse()
     history_str = "\n".join([f"{m.sender.upper()}: {m.content}" for m in history_msgs])
 
-    # 3. Generate response using LLM or smart concierge
-    reply_text = ""
-    actions_taken = {}
-
-    if llm_service.is_available():
-        system_prompt = (
-            "You are the VoyageAI Concierge & Follow-Up Travel Specialist. "
-            "The user is asking a follow-up question or requesting an adjustment to an existing trip plan. "
-            "You have full trip memory and context. Respond informatively, concisely, and supportively. "
-            "If they ask to adjust a day (e.g. 'Make Day 3 more relaxed', 'Add vegetarian spots'), explain precisely what changes you suggest."
+    # 3. Answer from retrieved evidence, falling back to web research or abstaining.
+    try:
+        rag_answer = await rag_service.answer(
+            query=f"{trip.destination}: {chat_req.message}",
+            destination=trip.destination,
+            trip_context=f"{trip_context_str}\nCONVERSATION HISTORY:\n{history_str}",
+            db=db,
         )
-        prompt = (
-            f"--- EXISTING TRIP CONTEXT ---\n{trip_context_str}\n\n"
-            f"--- CONVERSATION HISTORY ---\n{history_str}\n\n"
-            f"USER FOLLOW-UP REQUEST: {chat_req.message}\n"
-        )
-        try:
-            reply_text = await llm_service.generate_text(prompt, system_prompt=system_prompt)
-        except Exception as e:
-            logger.warning(f"Chat LLM failed: {e}")
-
-    if not reply_text:
-        # Smart concierge heuristic response
-        msg_lower = chat_req.message.lower()
-        if "relaxed" in msg_lower or "slow down" in msg_lower:
-            reply_text = (
-                f"I've adjusted the pacing! For your days in {trip.destination}, we can space out afternoon transit "
-                f"and dedicate 14:00 - 16:30 for open leisure at a local garden tea house or scenic promenade, "
-                f"cutting back on consecutive monument visits to ensure a peaceful trip."
-            )
-            actions_taken = {"pacing_updated": "Relaxed tempo with 2-hour afternoon rest buffer applied"}
-        elif "vegetarian" in msg_lower or "vegan" in msg_lower:
-            reply_text = (
-                f"Certainly! I have updated your culinary recommendations in {trip.destination} with verified plant-based "
-                f"venues. Look for dedicated Buddhist temple dining (Shojin Ryori style), artisanal soba houses, "
-                f"and modern organic cafes in the central arts district."
-            )
-            actions_taken = {"dietary_updated": "Added vegetarian dining spots"}
-        elif "budget" in msg_lower or "reduce" in msg_lower or "cheap" in msg_lower:
-            reply_text = (
-                f"To optimize your budget in {trip.destination}, I suggest: 1) opting for 3-day unlimited subway passes "
-                f"rather than single tickets, 2) choosing authentic counter-service lunch sets (which are 40% cheaper than dinner), "
-                f"and 3) reserving boutique accommodations 1-2 metro stops outside the central luxury corridor."
-            )
-            actions_taken = {"budget_optimization": "Cost-saving transit and dining advice logged"}
-        else:
-            reply_text = (
-                f"Regarding your trip to {trip.destination}: That is completely feasible. "
-                f"I have preserved your full {trip.duration_days}-day itinerary context and budget allocations. "
-                f"Would you like me to adjust specific day timings, lodging picks, or culinary suggestions?"
-            )
+    except Exception as exc:
+        logger.exception("Grounded trip chat response failed.")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Unable to generate a grounded answer from retrieved travel sources.",
+        ) from exc
+    reply_text = rag_answer["answer"]
+    actions_taken = {
+        "sources": rag_answer["sources"],
+        "source_types": rag_answer["source_types"],
+        "grounded": rag_answer["grounded"],
+    }
 
     # 4. Save assistant response
     ai_msg = Message(

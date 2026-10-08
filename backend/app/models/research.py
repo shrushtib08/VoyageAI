@@ -117,6 +117,7 @@ class ResearchSource(Base):
     trip_id = Column(Integer, ForeignKey("trips.id"), nullable=False, index=True)
     agent_name = Column(String(50), nullable=False)
     title = Column(String(255), nullable=False)
+    source_type = Column(String(50), nullable=True)
     url = Column(String(500), nullable=True)
     snippet = Column(Text, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

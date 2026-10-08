@@ -35,8 +35,9 @@ class FlightAgent(BaseAgent):
             {
                 "agent_name": self.name,
                 "title": f"AeroRoute & Airline Intelligence ({origin} to {destination})",
+                "source_type": "ESTIMATED INFORMATION",
                 "url": "https://www.iata.org/en/publications/directories/",
-                "snippet": f"Commercial flight path analysis and scheduled carrier options from {origin} to {destination}."
+                "snippet": f"Estimated commercial flight routes and carrier information from {origin} to {destination}; not a live fare or availability result."
             }
         ]
 
@@ -44,6 +45,7 @@ class FlightAgent(BaseAgent):
             sources.append({
                 "agent_name": self.name,
                 "title": "AviationStack Live Flight Data Feed",
+                "source_type": "LIVE API DATA",
                 "url": "https://aviationstack.com",
                 "snippet": f"Real-time flight schedule verified via AviationStack API."
             })

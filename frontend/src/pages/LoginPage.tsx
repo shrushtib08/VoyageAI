@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { api } from "../services/api";
 import { useAuth } from "../hooks/useAuth";
-import { Compass, Lock, User, ArrowRight, Loader2, AlertCircle, KeyRound } from "lucide-react";
+import { Compass, Lock, User, ArrowRight, Loader2, AlertCircle } from "lucide-react";
 
 interface LoginPageProps {
   onNavigate: (page: string) => void;
@@ -33,11 +33,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate, onSuccess }) =
     } finally {
       setLoading(false);
     }
-  };
-
-  const fillDemoAccount = () => {
-    setIdentifier("traveler1");
-    setPassword("mypassword123");
   };
 
   return (
@@ -77,7 +72,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate, onSuccess }) =
                   required
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="e.g. traveler1 or user@example.com"
+                  placeholder="e.g. alex-traveler or you@example.com"
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-voyage-500"
                 />
               </div>
@@ -119,17 +114,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate, onSuccess }) =
             </button>
           </form>
 
-          {/* Quick Demo Fill Helper */}
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-center">
-            <button
-              type="button"
-              onClick={fillDemoAccount}
-              className="inline-flex items-center gap-1.5 text-xs text-voyage-600 dark:text-voyage-400 font-semibold hover:underline"
-            >
-              <KeyRound className="w-3.5 h-3.5" />
-              <span>Fill Quick Demo Account (traveler1)</span>
-            </button>
-          </div>
         </div>
 
         {/* Footer Link */}

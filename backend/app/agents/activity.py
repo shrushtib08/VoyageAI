@@ -2,6 +2,7 @@ import logging
 from typing import Dict, Any, List
 from app.agents.base import BaseAgent
 from app.services.llm import llm_service
+from app.rag.rag_service import rag_service
 
 logger = logging.getLogger(__name__)
 
@@ -20,20 +21,20 @@ class ActivityAgent(BaseAgent):
         currency = context.get("currency", "INR")
         travel_style = context.get("travel_style", "balanced")
         duration_days = context.get("duration_days", 7)
+        knowledge = await rag_service.agent_knowledge(
+            query=f"Cultural attractions, activities, seasonal travel and local customs in {destination}; interests: {', '.join(interests)}",
+            destination=destination,
+        )
 
-        activity_data = await self.curate_activities(destination, interests, currency, travel_style, duration_days)
+        activity_data = await self.curate_activities(
+            destination, interests, currency, travel_style, duration_days, knowledge["context"]
+        )
 
-        sources = [
-            {
-                "agent_name": self.name,
-                "title": f"Cultural Activities & Experiences Guide - {destination}",
-                "url": f"https://www.getyourguide.com/s/?q={destination.replace(' ', '+')}",
-                "snippet": f"Curated local tours, architectural walking trails, and cultural experiences in {destination}."
-            }
-        ]
+        sources = [{"agent_name": self.name, **source} for source in knowledge["sources"]]
 
         return {
             "ranked_activities": activity_data.get("ranked_activities", []),
+            "source_types": sorted({source["source_type"] for source in sources}) or ["ESTIMATED INFORMATION"],
             "source_citations": sources,
         }
 
@@ -43,7 +44,8 @@ class ActivityAgent(BaseAgent):
         interests: List[str],
         currency: str,
         travel_style: str,
-        duration_days: int
+        duration_days: int,
+        rag_context: str = "",
     ) -> Dict[str, Any]:
         """Queries LLM for ranked personalized activities."""
         if llm_service.is_available():
@@ -58,6 +60,7 @@ class ActivityAgent(BaseAgent):
                 f"Travel Style: {travel_style}\n"
                 f"Trip Duration: {duration_days} days\n"
                 f"Currency: {currency}\n"
+                f"RAG KNOWLEDGE (stable destination reference):\n{rag_context}\n"
                 "Return JSON with:\n"
                 "- ranked_activities: list of {\n"
                 "    rank (int starting at 1),\n"

@@ -498,6 +498,7 @@ class MultiAgentOrchestrator:
                     trip_id=trip_id,
                     agent_name=s.get("agent_name", "ResearchAgent"),
                     title=s.get("title", "Resource"),
+                    source_type=s.get("source_type"),
                     url=s.get("url"),
                     snippet=s.get("snippet"),
                 )

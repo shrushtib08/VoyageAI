@@ -8,6 +8,7 @@ class ResearchSourceSchema(BaseModel):
 
     agent_name: str
     title: str
+    source_type: Optional[str] = None
     url: Optional[str] = None
     snippet: Optional[str] = None
 

@@ -1,19 +1,23 @@
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import inspect, text
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.config import settings
-from app.database.session import engine, Base
+from app.database.session import engine, Base, SessionLocal
 import app.models  # Ensure all SQLAlchemy models are registered
 from app.api.auth import router as auth_router
 from app.api.trips import router as trips_router
 from app.api.chat import router as chat_router
+from app.api.rag import router as rag_router
 from app.api.export import router as export_router
 from app.services.llm import llm_service
 from app.services.aviation import aviation_service
 from app.services.weather import weather_service
 from app.services.websearch import web_search_service
+from app.rag.rag_service import rag_service
 
 logging.basicConfig(
     level=logging.INFO,
@@ -27,7 +31,18 @@ async def lifespan(app: FastAPI):
     # Initialize database tables
     logger.info("Initializing database schema...")
     Base.metadata.create_all(bind=engine)
+    source_columns = {column["name"] for column in inspect(engine).get_columns("research_sources")}
+    if "source_type" not in source_columns:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE research_sources ADD COLUMN source_type VARCHAR(50)"))
     logger.info("Database schema initialized successfully.")
+
+    rag_db = SessionLocal()
+    try:
+        rag_service.initialize(rag_db)
+    finally:
+        rag_db.close()
+
     yield
 
 
@@ -40,8 +55,9 @@ app = FastAPI(
 
 # CORS Middleware
 origins = settings.cors_origins_list
-if "*" not in origins and "http://localhost:5173" not in origins:
-    origins.append("http://localhost:5173")
+for o in ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000", "http://127.0.0.1:3000"]:
+    if o not in origins:
+        origins.append(o)
 
 app.add_middleware(
     CORSMiddleware,
@@ -55,6 +71,7 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api")
 app.include_router(trips_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
+app.include_router(rag_router, prefix="/api")
 app.include_router(export_router, prefix="/api")
 
 
@@ -71,6 +88,15 @@ def root():
 
 @app.get("/api/health")
 def health_check():
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+    except SQLAlchemyError as exc:
+        logger.exception("Database health check failed.")
+        raise HTTPException(
+            status_code=503,
+            detail={"status": "unhealthy", "database": "disconnected"},
+        ) from exc
     return {
         "status": "healthy",
         "database": "connected",

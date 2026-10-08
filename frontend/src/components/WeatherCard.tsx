@@ -23,11 +23,11 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({ weather }) => {
               >
                 {weather.is_live_forecast ? (
                   <>
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Live OpenWeather Feed
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> LIVE API DATA
                   </>
                 ) : (
                   <>
-                    <ShieldCheck className="w-3.5 h-3.5 text-amber-500" /> Seasonal Climate Guidance
+                    <ShieldCheck className="w-3.5 h-3.5 text-amber-500" /> ESTIMATED INFORMATION
                   </>
                 )}
               </span>

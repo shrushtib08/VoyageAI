@@ -15,6 +15,7 @@ export interface AuthResponse {
 export interface ResearchSource {
   agent_name: string;
   title: string;
+  source_type?: "RAG KNOWLEDGE" | "LIVE API DATA" | "WEB RESEARCH" | "ESTIMATED INFORMATION" | string;
   url?: string;
   snippet?: string;
 }
@@ -288,6 +289,14 @@ export interface ChatMessage {
   sender: "user" | "assistant";
   content: string;
   actions_taken?: Record<string, any>;
+  sources?: Array<{
+    source_type: string;
+    title: string;
+    url?: string | null;
+    source?: string;
+    chunk_id?: number;
+    snippet?: string;
+  }>;
   created_at: string;
 }
 

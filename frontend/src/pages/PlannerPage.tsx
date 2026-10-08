@@ -113,18 +113,24 @@ export const PlannerPage: React.FC<PlannerPageProps> = ({
     setMode("prompt");
   };
 
+  const ensureAuthenticated = async (): Promise<boolean> => {
+    if (user) return true;
+    onNavigate("login");
+    return false;
+  };
+
   const handlePromptSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim() || loading) return;
 
-    if (!user) {
-      alert("Please sign in or register to orchestrate trips.");
-      onNavigate("login");
-      return;
-    }
-
     setLoading(true);
     setError(null);
+
+    const authed = await ensureAuthenticated();
+    if (!authed) {
+      setLoading(false);
+      return;
+    }
 
     try {
       const created = await api.trips.createFromPrompt(prompt.trim());
@@ -141,14 +147,14 @@ export const PlannerPage: React.FC<PlannerPageProps> = ({
     e.preventDefault();
     if (!destination.trim() || loading) return;
 
-    if (!user) {
-      alert("Please sign in or register to orchestrate trips.");
-      onNavigate("login");
-      return;
-    }
-
     setLoading(true);
     setError(null);
+
+    const authed = await ensureAuthenticated();
+    if (!authed) {
+      setLoading(false);
+      return;
+    }
 
     try {
       const created = await api.trips.createStructured({

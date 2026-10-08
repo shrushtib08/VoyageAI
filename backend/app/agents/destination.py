@@ -3,6 +3,7 @@ from typing import Dict, Any, List
 from app.agents.base import BaseAgent
 from app.services.websearch import web_search_service
 from app.services.llm import llm_service
+from app.rag.rag_service import rag_service
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +20,10 @@ class DestinationResearchAgent(BaseAgent):
         destination = context.get("destination", "Japan")
         multi_cities = context.get("multi_cities", [destination])
         interests = context.get("interests", ["culture", "photography", "nature"])
+        knowledge = await rag_service.agent_knowledge(
+            query=f"Destination guide, attractions, customs, transport and local tips for {destination}; interests: {', '.join(interests)}",
+            destination=destination,
+        )
 
         # 1. Web research via Tavily if available
         web_sources = []
@@ -31,18 +36,16 @@ class DestinationResearchAgent(BaseAgent):
                     "title": s.get("title", f"Destination Guide: {destination}"),
                     "url": s.get("url"),
                     "snippet": s.get("snippet"),
+                    "source_type": "WEB RESEARCH",
                 })
 
         # 2. Extract structured destination highlights
-        dest_data = await self.research_destination(destination, multi_cities, interests, web_sources)
+        dest_data = await self.research_destination(
+            destination, multi_cities, interests, web_sources, knowledge["context"]
+        )
 
-        all_sources = web_sources if web_sources else [
-            {
-                "agent_name": self.name,
-                "title": f"Official Tourism & Cultural Heritage Board - {destination}",
-                "url": f"https://en.wikipedia.org/wiki/{destination.replace(' ', '_')}",
-                "snippet": f"Historical landmarks, geographic districts, and cultural assets of {destination}."
-            }
+        all_sources = web_sources + [
+            {"agent_name": self.name, **source} for source in knowledge["sources"]
         ]
 
         return {
@@ -61,6 +64,7 @@ class DestinationResearchAgent(BaseAgent):
         multi_cities: List[str],
         interests: List[str],
         web_sources: List[Dict[str, Any]],
+        rag_context: str = "",
     ) -> Dict[str, Any]:
         """Queries LLM for curated landmark and district data."""
         if llm_service.is_available():
@@ -74,6 +78,7 @@ class DestinationResearchAgent(BaseAgent):
                 f"Destination: {destination} (Cities: {', '.join(multi_cities)})\n"
                 f"User Interests: {', '.join(interests)}\n"
                 f"Context from research:\n{sources_summary}\n"
+                f"RAG KNOWLEDGE (stable reference material):\n{rag_context}\n"
                 "Return JSON with:\n"
                 "- major_attractions: list of {name, category, description, approx_visit_time_hours, opening_hours, tips, source}\n"
                 "- cultural_sites: list of {name, category, description, approx_visit_time_hours, tips, source}\n"
