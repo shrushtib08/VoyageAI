@@ -2,6 +2,8 @@ services:
   db:
     image: pgvector/pgvector:pg16
     restart: unless-stopped
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_DB: voyageai
       POSTGRES_USER: voyageai
@@ -32,7 +34,6 @@ services:
       EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-1536}
       RAG_CHUNK_SIZE: ${RAG_CHUNK_SIZE:-800}
       RAG_CHUNK_OVERLAP: ${RAG_CHUNK_OVERLAP:-120}
-      RAG_ADMIN_USERNAMES: ${RAG_ADMIN_USERNAMES:-}
     depends_on:
       db:
         condition: service_healthy

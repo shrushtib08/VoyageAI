@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { User } from "../types";
 import { api } from "../services/api";
 
@@ -39,26 +39,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     initAuth();
   }, []);
 
-  const login = (newToken: string, newUser: User) => {
+  const login = useCallback((newToken: string, newUser: User) => {
     localStorage.setItem("voyageai_token", newToken);
     setToken(newToken);
     setUser(newUser);
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem("voyageai_token");
     setToken(null);
     setUser(null);
-  };
+  }, []);
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     try {
       const me = await api.auth.getMe();
       setUser(me);
     } catch {
       logout();
     }
-  };
+  }, [logout]);
 
   return (
     <AuthContext.Provider value={{ user, token, isLoading, login, logout, refreshUser }}>

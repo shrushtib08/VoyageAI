@@ -36,21 +36,15 @@ class Settings(BaseSettings):
     EMBEDDING_DIMENSIONS: int = 1536
     RAG_CHUNK_SIZE: int = 800
     RAG_CHUNK_OVERLAP: int = 120
-    RAG_ADMIN_USERNAMES: str = ""
-
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore"
-    )
-
+    env_file="../.env",
+    env_file_encoding="utf-8",
+    extra="ignore"
+)
     @property
     def cors_origins_list(self) -> List[str]:
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
 
-    @property
-    def rag_admin_usernames(self) -> List[str]:
-        return [name.strip().casefold() for name in self.RAG_ADMIN_USERNAMES.split(",") if name.strip()]
 
 
 settings = Settings()

@@ -53,3 +53,6 @@ Thumbs.db
 *.db
 *.sqlite3
 voyageai.db
+
+# Large GeoNames source dataset (download separately for import)
+data/Geonames/allCountries.txt

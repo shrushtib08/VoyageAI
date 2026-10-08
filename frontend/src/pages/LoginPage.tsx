@@ -126,6 +126,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate, onSuccess }) =
             Create one here
           </button>
         </p>
+        <p className="text-center text-xs">
+          <button onClick={() => onNavigate("admin-login")} className="text-slate-500 hover:text-voyage-600 dark:hover:text-voyage-400 hover:underline">
+            Administrator sign-in
+          </button>
+        </p>
       </div>
     </div>
   );

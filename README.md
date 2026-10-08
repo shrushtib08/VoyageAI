@@ -214,11 +214,26 @@ Start the complete PostgreSQL + pgvector + backend + frontend stack with Docker 
 ```powershell
 Copy-Item .env.example .env
 # Set a unique POSTGRES_PASSWORD and a random SECRET_KEY (at least 32 characters).
-# Then configure real API keys and RAG_ADMIN_USERNAMES in .env.
+# Then configure real API keys and any provider settings in .env.
 docker compose up --build
 ```
 
 Open `http://localhost:8080`. PostgreSQL runs using the pgvector image and the API initializes the RAG schema at startup. Do not commit `.env`; keep `POSTGRES_PASSWORD` URL-safe (letters/numbers) for the Compose database URL.
+
+### Create the separate administrator account
+
+Admin credentials are **not** `.env` settings. Create the admin account after the backend is running; the password is prompted securely, hashed, and never printed:
+
+```powershell
+# Docker Compose
+docker compose exec backend python -m app.create_admin
+
+# Or, for a backend running locally from the repository root
+$env:PYTHONPATH = "backend"
+.\venv\Scripts\python.exe -m app.create_admin
+```
+
+The command requires a unique email and username and a password of at least 12 characters. Public registration cannot grant administrator privileges. Use the separate `/admin/login` page; it opens the protected `/admin` dashboard. The dashboard shows users, trips, agent runs and research-source totals, and provides RAG document management when pgvector is available.
 
 For a local backend run outside Docker, RAG storage requires PostgreSQL with the **pgvector server extension** installed; SQLite remains available for the rest of local development but does not persist or search vectors. Point `DATABASE_URL` at PostgreSQL and make sure the database role can enable the extension (or have an administrator enable it):
 
@@ -226,9 +241,28 @@ For a local backend run outside Docker, RAG storage requires PostgreSQL with the
 CREATE EXTENSION IF NOT EXISTS vector;
 ```
 
-Configure an OpenAI-compatible embeddings endpoint using `EMBEDDING_API_KEY`, `EMBEDDING_API_BASE_URL`, `EMBEDDING_MODEL`, and `EMBEDDING_DIMENSIONS`. Ingestion and semantic retrieval fail explicitly if embeddings or pgvector are unavailable; VoyageAI does not create synthetic embeddings. Set `RAG_ADMIN_USERNAMES` to a comma-separated list of existing VoyageAI usernames permitted to manage documents.
+Configure an OpenAI-compatible embeddings endpoint using `EMBEDDING_API_KEY`, `EMBEDDING_API_BASE_URL`, `EMBEDDING_MODEL`, and `EMBEDDING_DIMENSIONS`. Ingestion and semantic retrieval fail explicitly if embeddings or pgvector are unavailable; VoyageAI does not create synthetic embeddings. Only accounts created through the administrator bootstrap command may manage knowledge documents.
 
 Authenticated RAG search is available at `POST /api/rag/search`. Administrators can list, ingest, and delete knowledge documents at `/api/rag/admin/documents` using multipart upload fields for title/source and optional URL, destination, country, category, document type, publication date, and update date. Supported files are PDF, TXT, Markdown, and HTML (PDFs must contain extractable text; OCR is not performed). Duplicate content and URLs are skipped. Answers expose `RAG KNOWLEDGE` or `WEB RESEARCH` source labels and citations; a failed retrieval with no web results produces an explicit abstention. Rapidly changing flight, hotel, weather, and alert data must continue to use live providers rather than the knowledge base.
+
+### GeoNames place lookup and RAG references
+
+The GeoNames source file is structured gazetteer data, so VoyageAI keeps it in a relational lookup table instead of embedding the full file. The import script streams `data/Geonames/allCountries.txt`, filters to populated places with recorded population in its configured Asian-country scope, and imports in batches. Run it after PostgreSQL is available:
+
+```powershell
+$env:PYTHONPATH = "backend"
+.\venv\Scripts\python.exe backend/scripts/import_asia_geonames.py
+```
+
+The lookup endpoint is `GET /api/places/search?q=tokyo&country_code=JP&limit=10`. It returns matching place names, coordinates, population, administrative code, and time zone. Searching is prefix-based; country code and limit are optional. The table is created by the importer, so the endpoint returns `503` until the import has completed.
+
+To make a concise, attributed list of populated places available to semantic RAG search, export one Markdown reference (up to 250 places) and upload it in the administrator dashboard's RAG knowledge section:
+
+```powershell
+.\venv\Scripts\python.exe backend/scripts/export_geonames_rag.py --country JP --limit 100 --output data\rag_exports\geonames-jp.md
+```
+
+The export is a gazetteer, not a travel guide or source of current travel advice. GeoNames data is licensed under CC BY 4.0; the generated Markdown retains attribution. RAG ingestion still requires PostgreSQL with pgvector and a configured embedding provider. Rotate API keys and passwords that have been exposed, and do not commit `.env`.
 
 ---
 

@@ -6,6 +6,8 @@ import {
   ProgressState,
   Conversation,
   ChatMessage,
+  AdminOverview,
+  RagDocumentList,
 } from "../types";
 
 const API_BASE = "/api";
@@ -56,6 +58,48 @@ export const api = {
         headers: { ...getAuthHeader() },
       });
       return handleResponse<User>(res);
+    },
+  },
+
+  admin: {
+    async login(data: { username_or_email: string; password: string }): Promise<AuthResponse> {
+      const res = await fetch(`${API_BASE}/admin/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      return handleResponse<AuthResponse>(res);
+    },
+
+    async overview(): Promise<AdminOverview> {
+      const res = await fetch(`${API_BASE}/admin/overview`, {
+        headers: { ...getAuthHeader() },
+      });
+      return handleResponse<AdminOverview>(res);
+    },
+
+    async listRagDocuments(): Promise<RagDocumentList> {
+      const res = await fetch(`${API_BASE}/rag/admin/documents`, {
+        headers: { ...getAuthHeader() },
+      });
+      return handleResponse<RagDocumentList>(res);
+    },
+
+    async uploadRagDocument(formData: FormData): Promise<{ document_id: number; chunk_count: number; duplicate: boolean }> {
+      const res = await fetch(`${API_BASE}/rag/admin/documents`, {
+        method: "POST",
+        headers: { ...getAuthHeader() },
+        body: formData,
+      });
+      return handleResponse(res);
+    },
+
+    async deleteRagDocument(documentId: number): Promise<void> {
+      const res = await fetch(`${API_BASE}/rag/admin/documents/${documentId}`, {
+        method: "DELETE",
+        headers: { ...getAuthHeader() },
+      });
+      if (!res.ok) throw new Error(`Failed to delete document (${res.status})`);
     },
   },
 

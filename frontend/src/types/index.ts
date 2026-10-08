@@ -3,7 +3,43 @@ export interface User {
   email: string;
   username: string;
   full_name?: string;
+  is_admin: boolean;
   created_at: string;
+}
+
+export interface AdminOverview {
+  counts: {
+    users: number;
+    trips: number;
+    agent_runs: number;
+    research_sources: number;
+    rag_documents: number | null;
+  };
+  users: Array<{ id: number; username: string; email: string; is_admin: boolean; created_at: string | null }>;
+  trips: Array<{ id: number; title: string; destination: string; status: string; username: string; created_at: string | null }>;
+  agent_runs: Array<{ id: number; trip_id: number; agent_name: string; status: string; created_at: string | null; duration_seconds: number | null }>;
+  generated_at: string;
+}
+
+export interface RagDocument {
+  id: number;
+  title: string;
+  source: string;
+  url?: string | null;
+  destination?: string | null;
+  country?: string | null;
+  category?: string | null;
+  document_type?: string | null;
+  publication_date?: string | null;
+  update_date?: string | null;
+  created_at: string;
+  chunk_count: number;
+}
+
+export interface RagDocumentList {
+  documents: RagDocument[];
+  available: boolean;
+  message?: string | null;
 }
 
 export interface AuthResponse {

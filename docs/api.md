@@ -4,6 +4,25 @@ Base URL: `http://localhost:8000/api`
 
 Interactive Swagger Docs: `http://localhost:8000/docs`
 
+## GeoNames Place Lookup
+
+### Search Populated Places
+- **GET** `/places/search`
+- **Query Params**:
+  - `q` (required, 2-100 characters): place-name or ASCII-name prefix.
+  - `country_code` (optional): two-letter country code, such as `JP`.
+  - `limit` (optional, 1-25; default 10).
+- **Response** (200 OK): matching place records with coordinates, administrative code,
+  population, and time zone, plus `count` and `source: "GeoNames"`.
+- **Availability**: the GeoNames importer must have created and populated
+  `geographic_places`; otherwise the endpoint returns `503 Service Unavailable`.
+
+Example: `GET /places/search?q=tokyo&country_code=JP&limit=10`
+
+GeoNames records are structured geographic references; use the RAG upload workflow
+for descriptions and stable travel knowledge. The export utility can create a small,
+attributed Markdown place list for a country for ingestion in the admin dashboard.
+
 ---
 
 ## 1. Authentication Endpoints

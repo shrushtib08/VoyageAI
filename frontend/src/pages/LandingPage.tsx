@@ -1,17 +1,14 @@
-import React from "react";
+import React, { FormEvent, useState } from "react";
 import {
-  Compass,
+  ArrowDown,
   ArrowRight,
-  Sparkles,
-  Bot,
+  ArrowUpRight,
+  BedDouble,
+  Compass,
+  MapPin,
   Plane,
-  ShieldCheck,
-  Zap,
-  Globe,
-  Coins,
-  CheckCircle2,
-  Calendar,
-  Users,
+  Send,
+  Sparkles,
 } from "lucide-react";
 
 interface LandingPageProps {
@@ -19,203 +16,209 @@ interface LandingPageProps {
   onSetPrompt?: (prompt: string) => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onSetPrompt }) => {
-  const examplePrompts = [
-    "Plan a 7-day trip to Japan from Bangalore for two people in December. My budget is ₹1,50,000. I like food, culture, photography and nature.",
-    "Plan a 10-day trip covering Paris, Rome and Florence for a couple with a balanced budget and historic walking tours.",
-    "Plan a 5-day adventure in Bali for 3 friends under ₹75,000 each with vegetarian food, waterfalls, and surf spots.",
-  ];
+const modes = [
+  { label: "Flights", icon: Plane },
+  { label: "Hotels", icon: BedDouble },
+  { label: "Experiences", icon: Sparkles },
+] as const;
 
-  const handlePromptClick = (p: string) => {
-    if (onSetPrompt) onSetPrompt(p);
+const destinations = [
+  {
+    name: "Farther afield",
+    country: "A world of possibility",
+    note: "Let curiosity lead",
+    image: "/images/travel-world.jpg",
+    prompt:
+      "Help me discover an unforgettable destination for my next trip, with a mix of iconic sights and local experiences.",
+  },
+  {
+    name: "The journey",
+    country: "Take to the skies",
+    note: "Make getting there part of it",
+    image: "/images/travel-flight.jpg",
+    prompt:
+      "Help me plan a smooth flight-focused getaway, including the best time to travel and what to do when I arrive.",
+  },
+  {
+    name: "Island retreat",
+    country: "Maldives",
+    note: "Slow days by the water",
+    image: "/images/travel-island.jpg",
+    prompt:
+      "Plan a relaxing island escape to the Maldives with beautiful beaches, a memorable stay, and time to unwind.",
+  },
+  {
+    name: "Alpine stillness",
+    country: "Canadian Rockies",
+    note: "Find your mountain air",
+    image: "/images/travel-lake.jpg",
+    prompt:
+      "Plan a scenic trip to the Canadian Rockies with turquoise lakes, mountain views, and easy-to-moderate hikes.",
+  },
+  {
+    name: "Wild horizons",
+    country: "Mountain trails",
+    note: "Go a little further",
+    image: "/images/travel-hike.jpg",
+    prompt:
+      "Plan an inspiring mountain hiking trip with beautiful trails, comfortable places to stay, and enough time to explore.",
+  },
+];
+
+export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onSetPrompt }) => {
+  const [activeMode, setActiveMode] = useState<(typeof modes)[number]["label"]>("Experiences");
+  const [prompt, setPrompt] = useState("");
+
+  const submitPrompt = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const cleanPrompt = prompt.trim();
+    if (!cleanPrompt) return;
+    onSetPrompt?.(cleanPrompt);
     onNavigate("planner");
   };
 
+  const chooseDestination = (destinationPrompt: string) => {
+    setPrompt(destinationPrompt);
+    setActiveMode("Experiences");
+  };
+
   return (
-    <div className="space-y-24 pb-20">
-      {/* Hero Section */}
-      <section className="relative pt-12 pb-20 md:pt-20 md:pb-32 overflow-hidden">
-        {/* Background glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-tr from-voyage-500/15 via-teal-500/10 to-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="luxury-landing">
+      <section className="luxury-hero" aria-labelledby="landing-title">
+        <div className="hero-orb hero-orb-one" />
+        <div className="hero-orb hero-orb-two" />
+        <div className="hero-grid" />
 
-        <div className="max-w-5xl mx-auto px-4 text-center space-y-8 relative z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-panel border border-voyage-200 dark:border-voyage-800 text-xs font-semibold text-voyage-700 dark:text-voyage-300 shadow-sm animate-bounce-short">
-            <Sparkles className="w-3.5 h-3.5 text-voyage-500" />
-            <span>Original Multi-Agent Architecture • Real Concurrency Orchestration</span>
-          </div>
+        <div className="hero-content">
+          <div className="hero-copy">
+            <div className="hero-eyebrow">
+              <span className="eyebrow-spark"><Sparkles size={13} /></span>
+              A more thoughtful way to travel
+            </div>
+            <h1 id="landing-title">
+              Where will
+              <br />
+              you go <span>next?</span>
+            </h1>
+            <p className="hero-description">
+              Tell us what moves you. We’ll bring the world a little closer, with a journey
+              designed around you.
+            </p>
 
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-slate-900 dark:text-white leading-[1.1]">
-            Meet <span className="gradient-text">VoyageAI</span>.<br />
-            Your Intelligent Team of AI Travel Agents.
-          </h1>
-
-          <p className="max-w-2xl mx-auto text-base sm:text-xl text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
-            Describe your dream journey naturally. A coordinated team of 10 specialized AI agents researches flights, stays, regional food, and weather, synthesizing an audited day-by-day plan with smart budget optimization.
-          </p>
-
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <button
-              onClick={() => onNavigate("planner")}
-              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-voyage-600 to-indigo-600 hover:from-voyage-700 hover:to-indigo-700 text-white font-bold text-base shadow-lg shadow-voyage-500/25 transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
-            >
-              <span>Plan My Trip</span>
-              <ArrowRight className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => onNavigate("dashboard")}
-              className="w-full sm:w-auto px-6 py-4 rounded-xl glass-panel border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold text-slate-800 dark:text-slate-200 text-base transition-colors"
-            >
-              View Saved Trips
-            </button>
-          </div>
-
-          {/* Interactive Prompts Pills */}
-          <div className="pt-8 space-y-3">
-            <span className="text-xs uppercase tracking-wider font-bold text-slate-400">
-              Or click an example to start immediately:
-            </span>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 max-w-4xl mx-auto">
-              {examplePrompts.map((prompt, idx) => (
+            <div className="hero-mode-label">Your journey, your way</div>
+            <div className="hero-mode-switch" role="group" aria-label="Travel planning focus">
+              {modes.map(({ label, icon: Icon }) => (
                 <button
-                  key={idx}
-                  onClick={() => handlePromptClick(prompt)}
-                  className="w-full sm:w-auto text-left px-3.5 py-2 rounded-xl glass-panel border border-slate-200 dark:border-slate-800 hover:border-voyage-400 dark:hover:border-voyage-500 text-xs text-slate-700 dark:text-slate-300 transition-all hover:scale-[1.01] line-clamp-1"
+                  key={label}
+                  type="button"
+                  aria-pressed={activeMode === label}
+                  className={`mode-pill ${activeMode === label ? "mode-pill-active" : ""}`}
+                  onClick={() => setActiveMode(label)}
                 >
-                  💡 "{prompt.slice(0, 52)}..."
+                  <Icon size={15} strokeWidth={1.8} />
+                  {label}
                 </button>
               ))}
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* Architecture Flow Explanation */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center space-y-3 mb-12">
-          <span className="text-xs font-bold uppercase tracking-wider text-voyage-600 dark:text-voyage-400">
-            System Architecture
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white">
-            How the Multi-Agent Pipeline Works
-          </h2>
-          <p className="text-sm text-slate-500 max-w-xl mx-auto">
-            Not a single monolithic prompt. Specialized agents run concurrently, cross-validating requirements and enforcing geographical proximity.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 relative">
-          <div className="p-5 rounded-2xl glass-panel border border-slate-200 dark:border-slate-800 space-y-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-sm">
-              1
-            </div>
-            <h4 className="font-bold text-sm text-slate-900 dark:text-white">Travel Manager</h4>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Parses intent, resolves multi-city routing, extracts budget caps, and delegates specialized research tasks.
-            </p>
+            <button className="discover-link" onClick={() => onNavigate("planner")}>
+              Start planning <ArrowRight size={15} />
+            </button>
           </div>
 
-          <div className="p-5 rounded-2xl glass-panel border border-voyage-200 dark:border-voyage-900 bg-voyage-50/20 dark:bg-voyage-950/20 space-y-2">
-            <div className="w-8 h-8 rounded-lg bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-400 flex items-center justify-center font-bold text-sm">
-              2
-            </div>
-            <h4 className="font-bold text-sm text-slate-900 dark:text-white">6 Parallel Agents</h4>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Flight, Hotel, Destination, Weather, Food, and Activities execute concurrently with real APIs and fallbacks.
-            </p>
-          </div>
-
-          <div className="p-5 rounded-2xl glass-panel border border-slate-200 dark:border-slate-800 space-y-2">
-            <div className="w-8 h-8 rounded-lg bg-yellow-100 dark:bg-yellow-950 text-yellow-600 dark:text-yellow-400 flex items-center justify-center font-bold text-sm">
-              3
-            </div>
-            <h4 className="font-bold text-sm text-slate-900 dark:text-white">Budget Strategist</h4>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Computes 7 category allocations, per-person costs, and injects a 7% emergency contingency buffer.
-            </p>
-          </div>
-
-          <div className="p-5 rounded-2xl glass-panel border border-slate-200 dark:border-slate-800 space-y-2">
-            <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-sm">
-              4
-            </div>
-            <h4 className="font-bold text-sm text-slate-900 dark:text-white">Itinerary Architect</h4>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Clusters sites geographically into Morning, Afternoon, and Evening blocks with realistic commute buffers.
-            </p>
-          </div>
-
-          <div className="p-5 rounded-2xl glass-panel border border-emerald-200 dark:border-emerald-900 bg-emerald-50/20 dark:bg-emerald-950/20 space-y-2">
-            <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-sm">
-              5
-            </div>
-            <h4 className="font-bold text-sm text-slate-900 dark:text-white">Critic QA Validation</h4>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Audits travel pacing, duplicate sights, and meal pauses. Triggers automatic revision if conflicts arise.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Agent Roster Showcase */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center space-y-3 mb-12">
-          <span className="text-xs font-bold uppercase tracking-wider text-voyage-600 dark:text-voyage-400">
-            Meet the Agents
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white">
-            10 Dedicated Specialists for Every Journey
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {[
-            { title: "Travel Manager Agent", desc: "Central coordinator parsing natural prompts, dates, and strict user constraints.", icon: "🧭", tag: "Coordinator" },
-            { title: "Flight Agent", desc: "Analyzes airport corridors, carriers, fare ranges, and live AviationStack feeds.", icon: "✈️", tag: "Transit" },
-            { title: "Hotel Agent", desc: "Researches verified accommodations matching style, amenities, and metro access.", icon: "🏨", tag: "Lodging" },
-            { title: "Destination Agent", desc: "Maps UNESCO sites, hidden gems, and districts via Tavily AI web citations.", icon: "📍", tag: "Research" },
-            { title: "Weather Agent", desc: "Monitors OpenWeather conditions, seasonal temperatures, and packing advice.", icon: "🌤️", tag: "Climate" },
-            { title: "Food Agent", desc: "Curates regional gastronomy, food alleys, and certified vegetarian/vegan venues.", icon: "🍜", tag: "Gastronomy" },
-            { title: "Activity Agent", desc: "Ranks personalized workshops, nature excursions, and scenic viewpoints.", icon: "📸", tag: "Experiences" },
-            { title: "Budget Agent", desc: "Calculates subtotal, per-person rates, currency conversion, and contingency reserves.", icon: "💰", tag: "Financial" },
-            { title: "Itinerary Agent", desc: "Synthesizes cohesive day-by-day blocks with geographic clustering.", icon: "📅", tag: "Synthesis" },
-            { title: "Critic QA Agent", desc: "Performs adversarial schedule inspection to eliminate rush and impossible timetables.", icon: "🛡️", tag: "Quality Assurance" },
-          ].map((agent, idx) => (
-            <div
-              key={idx}
-              className="p-5 rounded-2xl glass-panel border border-slate-200 dark:border-slate-800 hover:border-voyage-400/50 transition-all space-y-2.5"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-2xl">{agent.icon}</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                  {agent.tag}
-                </span>
+          <div className="assistant-column">
+            <div className="assistant-card">
+              <div className="assistant-topline">
+                <div className="assistant-identity">
+                  <div className="assistant-avatar"><Compass size={20} /></div>
+                  <div>
+                    <span className="assistant-name">Tripto</span>
+                    <span className="assistant-role">Your personal travel concierge</span>
+                  </div>
+                </div>
+                <span className="online-indicator"><i /> Here for you</span>
               </div>
-              <h4 className="font-bold text-base text-slate-900 dark:text-white">{agent.title}</h4>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{agent.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
 
-      {/* Bottom CTA Banner */}
-      <section className="max-w-5xl mx-auto px-4">
-        <div className="p-8 sm:p-12 rounded-3xl bg-gradient-to-tr from-voyage-900 via-slate-900 to-indigo-950 text-white text-center space-y-6 shadow-2xl relative overflow-hidden">
-          <div className="space-y-3 relative z-10">
-            <h3 className="text-3xl sm:text-4xl font-black">
-              Ready to Experience Multi-Agent Travel Planning?
-            </h3>
-            <p className="text-sm sm:text-base text-slate-300 max-w-xl mx-auto">
-              Plan custom itineraries with live agent feedback, audited schedules, and memory-backed follow-up conversations.
-            </p>
+              <div className="assistant-conversation">
+                <div className="assistant-date"><span /> A LITTLE INSPIRATION <span /></div>
+                <div className="assistant-message">
+                  <span className="message-kicker">Hello, traveler <span>✳</span></span>
+                  <h2>Hello, I’m Tripto.<br />How can I help you today?</h2>
+                  <p>Dream it up — a faraway escape, a weekend reset, or somewhere wonderfully unexpected.</p>
+                </div>
+                <div className="suggestion-row">
+                  <button onClick={() => chooseDestination(destinations[0].prompt)}>A tropical escape <ArrowUpRight size={13} /></button>
+                  <button onClick={() => chooseDestination(destinations[1].prompt)}>Somewhere soulful <ArrowUpRight size={13} /></button>
+                </div>
+              </div>
+
+              <form className="assistant-input-wrap" onSubmit={submitPrompt}>
+                <label className="sr-only" htmlFor="trip-prompt">Describe your ideal trip</label>
+                <textarea
+                  id="trip-prompt"
+                  rows={2}
+                  maxLength={2000}
+                  value={prompt}
+                  onChange={(event) => setPrompt(event.target.value)}
+                  placeholder={
+                    activeMode === "Flights"
+                      ? "Where would you like to fly?"
+                      : activeMode === "Hotels"
+                        ? "Tell me about your perfect stay..."
+                        : "I’m dreaming of a trip to..."
+                  }
+                />
+                <div className="input-toolbar">
+                  <span><Sparkles size={13} /> Thoughtful plans, made for you</span>
+                  <button type="submit" aria-label="Start planning" disabled={!prompt.trim()}>
+                    <Send size={16} />
+                  </button>
+                </div>
+              </form>
+              <div className="assistant-footnote">VoyageAI brings a team of travel specialists to every plan.</div>
+            </div>
+            <div className="hero-footnote"><span /> Made for the way you want to feel.</div>
           </div>
-          <button
-            onClick={() => onNavigate("planner")}
-            className="px-8 py-4 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-extrabold text-sm shadow-md transition-all hover:scale-105 inline-flex items-center gap-2 relative z-10"
-          >
-            <span>Start Your Free Trip Plan</span>
-            <ArrowRight className="w-4 h-4 text-voyage-600" />
-          </button>
+
+          <aside className="destination-rail" aria-label="Destination inspiration">
+            <div className="rail-heading">
+              <div>
+                <span className="rail-kicker">A world of possibility</span>
+                <h2>Places to begin</h2>
+              </div>
+              <span className="rail-count">01 — 05</span>
+            </div>
+            <div className="destination-stack">
+              {destinations.map((destination, index) => (
+                <button
+                  type="button"
+                  className="destination-card"
+                  key={destination.name}
+                  onClick={() => chooseDestination(destination.prompt)}
+                  aria-label={`Plan a trip to ${destination.name}`}
+                >
+                  <img className="destination-image" src={destination.image} alt="" />
+                  <span className="destination-shade" />
+                  <span className="destination-number">0{index + 1}</span>
+                  <span className="destination-copy">
+                    <span className="destination-location"><MapPin size={12} /> {destination.country}</span>
+                    <span className="destination-title">{destination.name}</span>
+                    <span className="destination-note">{destination.note}</span>
+                  </span>
+                  <span className="destination-arrow"><ArrowUpRight size={15} /></span>
+                </button>
+              ))}
+            </div>
+            <button className="all-destinations" onClick={() => onNavigate("planner")}>
+              Explore beyond the ordinary <ArrowRight size={14} />
+            </button>
+          </aside>
+        </div>
+
+        <div className="hero-bottomline">
+          <span><span className="bottomline-dot" /> A little more wonder in every mile</span>
+          <button onClick={() => onNavigate("planner")}>SCROLL TO EXPLORE <ArrowDown size={13} /></button>
+          <span>DESIGNED AROUND YOU <span className="bottomline-star">✳</span></span>
         </div>
       </section>
     </div>

@@ -65,6 +65,70 @@ def test_user_registration_and_login():
     assert "access_token" in res_login.json()
 
 
+def test_admin_bootstrap_and_separate_login():
+    from app.create_admin import create_admin
+    from app.models.user import User
+
+    db = TestingSessionLocal()
+    try:
+        regular_user = User(
+            email="ordinary@example.com",
+            username="ordinary",
+            full_name="Ordinary Traveler",
+            hashed_password=hash_password("regular-password"),
+        )
+        db.add(regular_user)
+        db.commit()
+
+        admin = create_admin(db, "admin@example.com", "voyage-admin", "very-strong-admin-password")
+        assert admin.is_admin is True
+
+        regular_login = client.post(
+            "/api/admin/auth/login",
+            json={"username_or_email": "ordinary", "password": "regular-password"},
+        )
+        assert regular_login.status_code == 401
+
+        admin_login = client.post(
+            "/api/admin/auth/login",
+            json={"username_or_email": "voyage-admin", "password": "very-strong-admin-password"},
+        )
+        assert admin_login.status_code == 200
+        assert admin_login.json()["user"]["is_admin"] is True
+        token = admin_login.json()["access_token"]
+        overview = client.get("/api/admin/overview", headers={"Authorization": f"Bearer {token}"})
+        assert overview.status_code == 200
+        assert overview.json()["counts"]["users"] == 2
+        rag_documents = client.get(
+            "/api/rag/admin/documents",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert rag_documents.status_code == 200
+        assert rag_documents.json()["available"] is False
+    finally:
+        db.close()
+
+
+def test_regular_user_cannot_access_admin_endpoints():
+    registration = client.post(
+        "/api/auth/register",
+        json={
+            "email": "traveler@example.com",
+            "username": "traveler",
+            "password": "regular-password",
+            "is_admin": True,
+        },
+    )
+    assert registration.status_code == 201
+    assert registration.json()["user"]["is_admin"] is False
+    token = registration.json()["access_token"]
+
+    forbidden = client.get("/api/admin/overview", headers={"Authorization": f"Bearer {token}"})
+    assert forbidden.status_code == 403
+    rag_forbidden = client.get("/api/rag/admin/documents", headers={"Authorization": f"Bearer {token}"})
+    assert rag_forbidden.status_code == 403
+
+
 @pytest.mark.asyncio
 async def test_travel_manager_heuristic_extraction():
     agent = TravelManagerAgent()
@@ -191,4 +255,3 @@ async def test_end_to_end_orchestration_and_export():
         assert len(completed_trip.sources) > 0
     finally:
         db.close()
-

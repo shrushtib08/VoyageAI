@@ -9,8 +9,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user
-from app.core.config import settings
+from app.api.deps import get_current_admin, get_current_user
 from app.database.session import get_db
 from app.models.user import User
 from app.rag.embeddings import EmbeddingError
@@ -34,12 +33,6 @@ class RagSearchRequest(BaseModel):
     category: Optional[str] = None
     document_type: Optional[str] = None
     top_k: int = Field(default=5, ge=1, le=20)
-
-
-def require_rag_admin(user: User = Depends(get_current_user)) -> User:
-    if user.username.casefold() not in settings.rag_admin_usernames:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="RAG administrator access required.")
-    return user
 
 
 def _parse_date(value: Optional[str], field_name: str) -> Optional[date]:
@@ -84,12 +77,16 @@ async def search_knowledge(
 
 @router.get("/admin/documents")
 def list_documents(
-    admin: User = Depends(require_rag_admin),
+    admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ):
     del admin
     if db.get_bind().dialect.name != "postgresql":
-        raise HTTPException(status_code=503, detail="RAG administration requires PostgreSQL with pgvector.")
+        return {
+            "documents": [],
+            "available": False,
+            "message": "RAG administration requires PostgreSQL with pgvector.",
+        }
     rows = db.execute(
         text(
             """
@@ -103,7 +100,7 @@ def list_documents(
             """
         )
     ).mappings().all()
-    return {"documents": [dict(row) for row in rows]}
+    return {"documents": [dict(row) for row in rows], "available": True, "message": None}
 
 
 @router.post("/admin/documents", status_code=status.HTTP_201_CREATED)
@@ -118,7 +115,7 @@ async def upload_document(
     document_type: Optional[str] = Form(default=None, max_length=100),
     publication_date: Optional[str] = Form(default=None),
     update_date: Optional[str] = Form(default=None),
-    admin: User = Depends(require_rag_admin),
+    admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ):
     del admin
@@ -157,7 +154,7 @@ async def upload_document(
 @router.delete("/admin/documents/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_document(
     document_id: int,
-    admin: User = Depends(require_rag_admin),
+    admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ):
     del admin
